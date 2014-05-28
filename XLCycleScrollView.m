@@ -11,36 +11,19 @@
 
 @interface XLCycleScrollView()
 
-//@property (nonatomic , strong) NSTimer *animationTimer;
-//@property (nonatomic , assign) NSTimeInterval animationDuration;
+@property (nonatomic , strong) NSTimer *animationTimer;
+@property (nonatomic , assign) NSTimeInterval animationDuration;
 
 @end
 
 @implementation XLCycleScrollView
 
-@synthesize scrollView = _scrollView;
-@synthesize pageControl = _pageControl;
-@synthesize currentPage = _curPage;
-@synthesize datasource = _datasource;
-@synthesize delegate = _delegate;
-
-- (void)dealloc
-{
-    //[_animationTimer release];
-    [_scrollView release];
-    [_pageControl release];
-    [_curViews release];
-    [super dealloc];
-}
-
 //自动翻页
-/*
 //减少父控件的引用计数
 - (void)free
 {
     [_animationTimer invalidate];
 }
- */
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -62,17 +45,14 @@
         
         _curPage = 0;
         //自动翻页
-        /*
-        self.animationDuration = 5.0f;
+        self.animationDuration = 4.0f;
         if (_animationDuration > 0.0) {
             self.animationTimer = [NSTimer scheduledTimerWithTimeInterval:self.animationDuration
                                                                    target:self
                                                                  selector:@selector(animationTimerDidFired:)
                                                                  userInfo:nil
                                                                   repeats:YES];
-            [self.animationTimer pauseTimer];
         }
-         */
     }
     return self;
 }
@@ -113,7 +93,6 @@
         UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self
                                                                                     action:@selector(handleTap:)];
         [v addGestureRecognizer:singleTap];
-        [singleTap release];
         v.frame = CGRectOffset(v.frame, v.frame.size.width * i, 0);
         [_scrollView addSubview:v];
     }
@@ -162,7 +141,6 @@
             UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self
                                                                                         action:@selector(handleTap:)];
             [v addGestureRecognizer:singleTap];
-            [singleTap release];
             v.frame = CGRectOffset(v.frame, v.frame.size.width * i, 0);
             [_scrollView addSubview:v];
         }
@@ -191,7 +169,6 @@
     [_scrollView setContentOffset:CGPointMake(_scrollView.frame.size.width, 0) animated:YES];
 }
 
-/*
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
 {
     [self.animationTimer pauseTimer];
@@ -201,7 +178,6 @@
 {
     [self.animationTimer resumeTimerAfterTimeInterval:self.animationDuration];
 }
- */
 
 - (void)animationTimerDidFired:(NSTimer *)timer
 {
