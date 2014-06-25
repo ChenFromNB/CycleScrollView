@@ -1,9 +1,5 @@
 //
 //  XLCycleScrollView.h
-//  CycleScrollViewDemo
-//
-//  Created by xie liang on 9/14/12.
-//  Copyright (c) 2012 xie liang. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
@@ -33,6 +29,10 @@
 
 //自动翻页
 - (void)free;
+//暂停翻滚
+- (void)pause;
+//继续翻滚
+- (void)resume;
 
 @end
 

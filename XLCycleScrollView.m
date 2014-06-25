@@ -1,10 +1,5 @@
 //
 //  XLCycleScrollView.m
-//  CycleScrollViewDemo
-//
-//  Created by xie liang on 9/14/12.
-//  Copyright (c) 2012 xie liang. All rights reserved.
-//
 
 #import "XLCycleScrollView.h"
 #import "NSTimer+Addition.h"
@@ -183,6 +178,15 @@
 {
     CGPoint newOffset = CGPointMake(self.scrollView.contentOffset.x + CGRectGetWidth(self.scrollView.frame), self.scrollView.contentOffset.y);
     [self.scrollView setContentOffset:newOffset animated:YES];
+}
+
+- (void)pause
+{
+    [self.animationTimer pauseTimer];
+}
+- (void)resume
+{
+    [self.animationTimer resumeTimerAfterTimeInterval:self.animationDuration];
 }
 
 @end
