@@ -1,34 +1,35 @@
 //
 //  XLCycleScrollView.m
+//
 
 #import "XLCycleScrollView.h"
 #import "NSTimer+Addition.h"
 
 @interface XLCycleScrollView()
+{
+    NSInteger _totalPages;
+    NSInteger _curPage;
+    NSMutableArray *_curViews;
+}
 
-@property (nonatomic , strong) NSTimer *animationTimer;
-@property (nonatomic , assign) NSTimeInterval animationDuration;
+@property (strong, nonatomic) UIScrollView *scrollView;
+@property (strong, nonatomic) UIPageControl *pageControl;
+@property (assign, nonatomic) NSInteger currentPage;
+
+@property (strong, nonatomic) NSTimer *animationTimer;
 
 @end
 
 @implementation XLCycleScrollView
 
-//自动翻页
-//减少父控件的引用计数
-- (void)free
-{
-    [_animationTimer invalidate];
-}
-
 - (id)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
-        // Initialization code
         _scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, self.frame.size.width, self.frame.size.height)];
         _scrollView.delegate = self;
         _scrollView.contentSize = CGSizeMake(self.frame.size.width * 3, self.frame.size.height);
-        _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.showsHorizontalScrollIndicator = NO;//水平线
         _scrollView.contentOffset = CGPointMake(self.frame.size.width, 0);
         _scrollView.pagingEnabled = YES;
         [self addSubview:_scrollView];
@@ -40,19 +41,33 @@
         
         _curPage = 0;
         //自动翻页
-        self.animationDuration = 4.0f;
-        if (_animationDuration > 0.0) {
-            self.animationTimer = [NSTimer scheduledTimerWithTimeInterval:self.animationDuration
-                                                                   target:self
-                                                                 selector:@selector(animationTimerDidFired:)
-                                                                 userInfo:nil
-                                                                  repeats:YES];
-        }
+        self.animationInterval = 1.5f;
+        self.animateDuration = 2.0f;
+//        if (self.animationInterval > 0.0) {
+//            self.animationTimer = [NSTimer scheduledTimerWithTimeInterval:self.animationInterval
+//                                                                   target:self
+//                                                                 selector:@selector(animationTimerDidFired:)
+//                                                                 userInfo:nil
+//                                                                  repeats:YES];
+//        }
     }
     return self;
 }
 
-- (void)setDataource:(id<XLCycleScrollViewDatasource>)datasource
+- (void)setAnimationInterval:(NSTimeInterval)animationInterval
+{
+    _animationInterval = animationInterval;
+    [_animationTimer invalidate];
+    if (self.animationInterval > 0) {
+        self.animationTimer = [NSTimer scheduledTimerWithTimeInterval:self.animationInterval
+                                                               target:self
+                                                             selector:@selector(animationTimerDidFired:)
+                                                             userInfo:nil
+                                                              repeats:YES];
+    }
+}
+
+- (void)setDatasource:(id<XLCycleScrollViewDatasource>)datasource
 {
     _datasource = datasource;
     [self reloadData];
@@ -65,13 +80,11 @@
         return;
     }
     _pageControl.numberOfPages = _totalPages;
-    //[self.animationTimer resumeTimerAfterTimeInterval:self.animationDuration];
     [self loadData];
 }
 
 - (void)loadData
 {
-    
     _pageControl.currentPage = _curPage;
     
     //从scrollView上移除所有的subview
@@ -95,8 +108,8 @@
     [_scrollView setContentOffset:CGPointMake(_scrollView.frame.size.width, 0)];
 }
 
-- (void)getDisplayImagesWithCurpage:(int)page {
-    
+- (void)getDisplayImagesWithCurpage:(int)page
+{
     int pre = [self validPageValue:_curPage-1];
     int last = [self validPageValue:_curPage+1];
     
@@ -143,6 +156,7 @@
 }
 
 #pragma mark - UIScrollViewDelegate
+
 - (void)scrollViewDidScroll:(UIScrollView *)aScrollView {
     int x = aScrollView.contentOffset.x;
     
@@ -159,8 +173,9 @@
     }
 }
 
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)aScrollView {
-    
+//ScrollView的手势操作
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)aScrollView
+{
     [_scrollView setContentOffset:CGPointMake(_scrollView.frame.size.width, 0) animated:YES];
 }
 
@@ -171,22 +186,54 @@
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
 {
-    [self.animationTimer resumeTimerAfterTimeInterval:self.animationDuration];
+    [self.animationTimer resumeTimerAfterTimeInterval:self.animationInterval];
 }
 
 - (void)animationTimerDidFired:(NSTimer *)timer
 {
-    CGPoint newOffset = CGPointMake(self.scrollView.contentOffset.x + CGRectGetWidth(self.scrollView.frame), self.scrollView.contentOffset.y);
-    [self.scrollView setContentOffset:newOffset animated:YES];
+    CGPoint newOffset = CGPointMake(CGRectGetWidth(self.scrollView.frame) * 2, self.scrollView.contentOffset.y);
+    _scrollView.delegate = nil;
+    [self pause];
+
+    [UIView animateWithDuration:self.animateDuration
+                          delay:0.0f
+                        options:UIViewAnimationOptionCurveEaseInOut
+                     animations:^{
+                         self.scrollView.contentOffset = newOffset;
+                     }
+                     completion:^(BOOL finished){
+                         int x = _scrollView.contentOffset.x;
+                         //往下翻一张
+                         if(x >= (2*self.frame.size.width)) {
+                             _curPage = [self validPageValue:_curPage+1];
+                             [self loadData];
+                         }
+                         //往上翻
+                         if(x <= 0) {
+                             _curPage = [self validPageValue:_curPage-1];
+                             [self loadData];
+                         }
+                         _scrollView.delegate = self;
+                         [self resume];
+                     }];
 }
 
+//暂停动画
 - (void)pause
 {
     [self.animationTimer pauseTimer];
 }
+
+//继续动画
 - (void)resume
 {
-    [self.animationTimer resumeTimerAfterTimeInterval:self.animationDuration];
+    [self.animationTimer resumeTimerAfterTimeInterval:self.animationInterval];
+}
+
+//减少父控件的引用计数
+- (void)free
+{
+    [_animationTimer invalidate];
 }
 
 @end
